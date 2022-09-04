@@ -1,15 +1,23 @@
 import datetime
+import itertools
 import json
 import pathlib
 import time
+import logging
 
 import httpx
-import xmltodict
+import lxml
 import yaml
+from bs4 import BeautifulSoup
 
 nyaa_url = 'https://nyaa.si'
 transmission_rpc_url = "http://localhost:9091/transmission/rpc"
 session_field = 'X-Transmission-Session-Id'
+
+logging.basicConfig(
+    format='[%(asctime)s][%(levelname)s] %(message)s',
+    level=logging.INFO
+)
 
 class TransmissionApi():
     def __init__(self):
@@ -24,36 +32,41 @@ class TransmissionApi():
         if tries == 0:
             raise Exception('Error contacting Transmission server.')
         data = json.dumps({
-              'method': 'torrent-add'
-            , 'arguments':
-                { 'download-dir': str(download_location)
-                , 'filename': torrent_url
-                }
-            })
+            'method': 'torrent-add',
+            'arguments': {
+                'download-dir': str(download_location),
+                'filename': torrent_url
+            }
+        })
         response:httpx.Response = self.session.post(url='', headers=self.headers, content=data)
         if response.status_code == 200:
-            print(datetime.datetime.now(), download_location)
+            logging.info(download_location)
         elif response.status_code == 409:
             self.restart_session()
             self.torrent_add(torrent_url, download_location, tries - 1)
 
-def ensure_list(thing):
-    return thing if type(thing) is list else [thing]
-
 def get_torrent_data_for_show(search_string):
     response = httpx.get(nyaa_url, params={'page': 'rss', 'q': search_string})
     if response.status_code == 200:
-        return ensure_list(xmltodict.parse(response.text)['rss']['channel']['item'])
+        return BeautifulSoup(response.text, 'lxml-xml').select('rss channel item')
+
+def get_file_name_for_torrent(torrent_page):
+    response = httpx.get(torrent_page)
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, 'lxml').select_one('.torrent-file-list li').children
+        return next(itertools.islice(soup, 1, None)).text.strip()
 
 def download_show(search_string, download_location, episode_start=1):
     session = TransmissionApi()
     episodes = get_torrent_data_for_show(search_string)[episode_start - 1:]
     for episode in episodes:
-        filepath = download_location / episode['title']
+        filepath = download_location / get_file_name_for_torrent(episode.guid.text)
+        logging.debug(filepath)
         partpath = filepath.with_suffix('.part')
         if filepath.exists() or partpath.exists():
+            logging.debug(f'path exists {filepath}')
             continue
-        session.torrent_add(episode['link'], download_location)
+        session.torrent_add(episode.link.text, download_location)
         time.sleep(1)
 
 def download_all_shows(config):
