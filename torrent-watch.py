@@ -56,15 +56,15 @@ def get_file_name_for_torrent(torrent_page):
         soup = BeautifulSoup(response.text, 'lxml').select_one('.torrent-file-list li').children
         return next(itertools.islice(soup, 1, None)).text.strip()
 
+def download_file_exists(path):
+    return path.exists() or path.with_suffix('.part').exists()
+
 def download_show(search_string, download_location, episode_start=1):
     session = TransmissionApi()
     episodes = get_torrent_data_for_show(search_string)[episode_start - 1:]
     for episode in episodes:
-        filepath = download_location / get_file_name_for_torrent(episode.guid.text)
-        logging.debug(filepath)
-        partpath = filepath.with_suffix('.part')
-        if filepath.exists() or partpath.exists():
-            logging.debug(f'path exists {filepath}')
+        if (download_file_exists(download_location / episode.title.text) or
+            download_file_exists(download_location / get_file_name_for_torrent(episode.guid.text))):
             continue
         session.torrent_add(episode.link.text, download_location)
         time.sleep(1)
