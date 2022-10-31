@@ -59,7 +59,7 @@ def get_file_name_for_torrent(torrent_page):
         return next(itertools.islice(soup, 1, None)).text.strip()
 
 def download_file_exists(path):
-    return path.exists() or path.with_suffix('.part').exists()
+    return path.exists() or path.with_suffix(path.suffix + '.part').exists()
 
 def download_show(search_string, download_location, episode_start=1):
     session = TransmissionApi()
