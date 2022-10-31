@@ -48,7 +48,9 @@ class TransmissionApi():
 def get_torrent_data_for_show(search_string):
     response = httpx.get(nyaa_url, params={'page': 'rss', 'q': search_string})
     if response.status_code == 200:
-        return BeautifulSoup(response.text, 'lxml-xml').select('rss channel item')
+        data = BeautifulSoup(response.text, 'lxml-xml').select('rss channel item')
+        data.reverse()
+        return data
 
 def get_file_name_for_torrent(torrent_page):
     response = httpx.get(torrent_page)
