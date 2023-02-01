@@ -1,9 +1,9 @@
-import datetime
+import argparse
 import itertools
 import json
+import logging
 import pathlib
 import time
-import logging
 
 import httpx
 import lxml
@@ -86,6 +86,14 @@ def download_all_shows(config):
         download_show(search_string, folder, start)
 
 if __name__ == '__main__':
-    with open('shows.yml', 'r', encoding='utf-8') as f:
-        config = yaml.load(f, Loader=yaml.Loader)
-    download_all_shows(config)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--periodic', action=argparse.BooleanOptionalAction, default=False)
+    args = parser.parse_args()
+    while True:
+        with open('shows.yml', 'r', encoding='utf-8') as f:
+            config = yaml.load(f, Loader=yaml.Loader)
+        download_all_shows(config)
+        if args.periodic:
+            time.sleep(60 * 60 * 24)
+        else:
+            break
