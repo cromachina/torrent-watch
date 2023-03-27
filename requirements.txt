@@ -1,4 +1,4 @@
-beautifulsoup4
-httpx
-lxml
-PyYAML
+beautifulsoup4==4.12.0
+httpx==0.22.0
+lxml==4.9.2
+PyYAML==6.0
