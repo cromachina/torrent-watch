@@ -19,6 +19,8 @@ logging.basicConfig(
     level=logging.INFO
 )
 
+logging.getLogger('httpx').setLevel(logging.WARNING)
+
 class TransmissionApi():
     def __init__(self):
         self.restart_session()
@@ -40,7 +42,7 @@ class TransmissionApi():
         })
         response:httpx.Response = self.session.post(url='', headers=self.headers, content=data)
         if response.status_code == 200:
-            logging.info(download_location)
+            logger.info(download_location)
         elif response.status_code == 409:
             self.restart_session()
             self.torrent_add(torrent_url, download_location, tries - 1)
