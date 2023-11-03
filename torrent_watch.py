@@ -42,7 +42,7 @@ class TransmissionApi():
         })
         response:httpx.Response = self.session.post(url='', headers=self.headers, content=data)
         if response.status_code == 200:
-            logger.info(download_location)
+            logging.info(download_location)
         elif response.status_code == 409:
             self.restart_session()
             self.torrent_add(torrent_url, download_location, tries - 1)
