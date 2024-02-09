@@ -41,9 +41,7 @@ class TransmissionApi():
             }
         })
         response:httpx.Response = self.session.post(url='', headers=self.headers, content=data)
-        if response.status_code == 200:
-            logging.info(download_location)
-        elif response.status_code == 409:
+        if response.status_code != 200:
             self.restart_session()
             self.torrent_add(torrent_url, download_location, tries - 1)
 
@@ -77,6 +75,7 @@ def download_show(search_string, download_location, episode_start=1):
             download_file_exists(download_location / nyaa.get_file_name_for_torrent(episode.guid.text))):
             continue
         transmission.torrent_add(episode.link.text, download_location)
+        logging.info(episode.title.text)
         time.sleep(1)
 
 def download_all_shows(config):
