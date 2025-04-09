@@ -88,10 +88,11 @@ def download_all_shows(config):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--config', type=str, default='shows.yml')
     parser.add_argument('--periodic', action=argparse.BooleanOptionalAction, default=False)
     args = parser.parse_args()
     while True:
-        with open('shows.yml', 'r', encoding='utf-8') as f:
+        with open(args.config, 'r', encoding='utf-8') as f:
             config = yaml.load(f, Loader=yaml.Loader)
         download_all_shows(config)
         if args.periodic:
