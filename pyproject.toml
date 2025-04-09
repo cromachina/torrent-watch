@@ -8,10 +8,10 @@ authors = ["cromachina"]
 
 [tool.poetry.dependencies]
 python = "^3.12"
-beautifulsoup4 = "^4.12.2"
-httpx = "^0.25.0"
-lxml = "^4.9.3"
-PyYAML = "^6.0.1"
+beautifulsoup4 = "*"
+httpx = "*"
+lxml = "*"
+PyYAML = "*"
 
 [tool.poetry.scripts]
 torrent-watch = "torrent_watch:main"

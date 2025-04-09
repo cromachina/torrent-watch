@@ -44,7 +44,6 @@
             packages = with pkgs.${system}; [
               (mkPoetryEnv {
                 projectDir = self;
-                preferWheels = true;
               })
               poetry
             ];
