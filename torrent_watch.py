@@ -86,7 +86,7 @@ def download_all_shows(config):
         folder = root / folder
         download_show(search_string, folder, start)
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, default='shows.yml')
     parser.add_argument('--periodic', action=argparse.BooleanOptionalAction, default=False)
@@ -99,3 +99,6 @@ if __name__ == '__main__':
             time.sleep(60 * 60 * 24)
         else:
             break
+
+if __name__ == '__main__':
+    main()
