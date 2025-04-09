@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "torrent-watch"
+version = "1.0.0"
+description = ""
+readme = "readme.md"
+license = "MIT"
+authors = ["cromachina"]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+beautifulsoup4 = "4.12.2"
+httpx = "0.25.0"
+lxml = "4.9.3"
+PyYAML = "6.0.1"
+
+[tool.poetry.scripts]
+torrent-watch = "torrent_watch:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
