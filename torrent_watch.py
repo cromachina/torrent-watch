@@ -1,4 +1,5 @@
 import argparse
+import base64
 import itertools
 import json
 import logging
@@ -12,7 +13,7 @@ from bs4 import BeautifulSoup
 
 nyaa_url = 'https://nyaa.si'
 transmission_rpc_url = "http://localhost:9091/transmission/rpc"
-session_field = 'X-Transmission-Session-Id'
+session_field = 'x-transmission-session-id'
 
 logging.basicConfig(
     format='[%(asctime)s][%(levelname)s] %(message)s',
@@ -27,23 +28,27 @@ class TransmissionApi():
 
     def restart_session(self):
         self.session = httpx.Client(base_url=transmission_rpc_url)
-        response = self.session.post(url='', data={'method': 'session-get'})
-        self.headers = {session_field: response.headers[session_field]}
+        response = self.session.post(url='', data=json.dumps({
+            'jsonrpc': '2.0',
+            'method': 'session_get',
+        }))
+        self.session.headers = { session_field: response.headers[session_field] }
 
-    def torrent_add(self, torrent_url, download_location, tries=2):
+    def torrent_add(self, torrent_data, download_location, tries=2):
         if tries == 0:
             raise Exception('Error contacting Transmission server.')
-        data = json.dumps({
-            'method': 'torrent-add',
-            'arguments': {
-                'download-dir': str(download_location),
-                'filename': torrent_url
-            }
-        })
-        response:httpx.Response = self.session.post(url='', headers=self.headers, content=data)
+        response:httpx.Response = self.session.post(url='', content=json.dumps({
+            'jsonrpc': '2.0',
+            'method': 'torrent_add',
+            'params': {
+                'download_dir': str(download_location),
+                'metainfo': torrent_data,
+            },
+            'id': self.session.headers[session_field],
+        }))
         if response.status_code != 200:
             self.restart_session()
-            self.torrent_add(torrent_url, download_location, tries - 1)
+            self.torrent_add(torrent_data, download_location, tries - 1)
 
 class NyaaApi():
     def __init__(self):
@@ -62,6 +67,11 @@ class NyaaApi():
             soup = BeautifulSoup(response.text, 'lxml').select_one('.torrent-file-list li').children
             return next(itertools.islice(soup, 1, None)).text.strip()
 
+    def get_torrent_data(self, torrent_file_page):
+        response = self.client.get(torrent_file_page)
+        if response.status_code == 200:
+            return base64.b64encode(response.content).decode()
+
 transmission = TransmissionApi()
 nyaa = NyaaApi()
 
@@ -74,7 +84,8 @@ def download_show(search_string, download_location, episode_start=1):
         if (download_file_exists(download_location / episode.title.text) or
             download_file_exists(download_location / nyaa.get_file_name_for_torrent(episode.guid.text))):
             continue
-        transmission.torrent_add(episode.link.text, download_location)
+        torrent_data = nyaa.get_torrent_data(episode.link.text)
+        transmission.torrent_add(torrent_data, download_location)
         logging.info(episode.title.text)
         time.sleep(1)
 
