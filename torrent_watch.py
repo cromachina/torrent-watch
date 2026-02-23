@@ -54,23 +54,32 @@ class NyaaApi():
     def __init__(self):
         self.client = httpx.Client(timeout=30.0)
 
-    def get_torrent_data_for_show(self, search_string):
+    def get_torrent_search_info(self, search_string):
         response = self.client.get(nyaa_url, params={'page': 'rss', 'q': search_string})
         if response.status_code == 200:
             data = BeautifulSoup(response.text, 'lxml-xml').select('rss channel item')
             data.reverse()
             return data
+        else:
+            logging.error(f'Could not get torrent info for: {search_string}')
+            return []
 
-    def get_file_name_for_torrent(self, torrent_page):
+    def get_torrent_file_name(self, torrent_page):
         response = self.client.get(torrent_page)
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'lxml').select_one('.torrent-file-list li').children
             return next(itertools.islice(soup, 1, None)).text.strip()
+        else:
+            logging.error(f'Could not get file name for torrent: {torrent_page} {response.er}')
+            return ""
 
-    def get_torrent_data(self, torrent_file_page):
+    def get_torrent_file(self, torrent_file_page):
         response = self.client.get(torrent_file_page)
         if response.status_code == 200:
             return base64.b64encode(response.content).decode()
+        else:
+            logging.error(f'Could not get torrent data: {torrent_file_page}')
+            return ""
 
 transmission = TransmissionApi()
 nyaa = NyaaApi()
@@ -79,12 +88,12 @@ def download_file_exists(path):
     return path.exists() or path.with_suffix(path.suffix + '.part').exists()
 
 def download_show(search_string, download_location, episode_start=1):
-    episodes = nyaa.get_torrent_data_for_show(search_string)[episode_start - 1:]
+    episodes = nyaa.get_torrent_search_info(search_string)[episode_start - 1:]
     for episode in episodes:
         if (download_file_exists(download_location / episode.title.text) or
-            download_file_exists(download_location / nyaa.get_file_name_for_torrent(episode.guid.text))):
+            download_file_exists(download_location / nyaa.get_torrent_file_name(episode.guid.text))):
             continue
-        torrent_data = nyaa.get_torrent_data(episode.link.text)
+        torrent_data = nyaa.get_torrent_file(episode.link.text)
         transmission.torrent_add(torrent_data, download_location)
         logging.info(episode.title.text)
         time.sleep(1)
