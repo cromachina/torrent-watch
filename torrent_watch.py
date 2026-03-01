@@ -70,7 +70,7 @@ class NyaaApi():
             soup = BeautifulSoup(response.text, 'lxml').select_one('.torrent-file-list li').children
             return next(itertools.islice(soup, 1, None)).text.strip()
         else:
-            logging.error(f'Could not get file name for torrent: {torrent_page} {response.er}')
+            logging.error(f'Could not get file name for torrent: {torrent_page} {response}')
             return ""
 
     def get_torrent_file(self, torrent_file_page):
